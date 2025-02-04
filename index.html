@@ -138,6 +138,16 @@
             color: white;
             border-radius: 5px;
         }
+        .modal-content input[type="text"],
+        .modal-content input[type="password"] {
+            padding: 8px;
+            margin: 10px;
+            width: 200px;
+            background-color: #333;
+            border: 1px solid #90EE90;
+            color: white;
+            border-radius: 5px;
+        }
         #dealer-cards, #player-cards {
             margin: 10px 0;
             font-size: 18px;
@@ -207,10 +217,36 @@
             background-color: #666;
             cursor: not-allowed;
         }
+        .account-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(144, 238, 144, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #90EE90;
+            color: #90EE90;
+        }
+        .account-btn {
+            padding: 5px 10px;
+            margin-left: 10px;
+            background-color: #90EE90;
+            border: none;
+            border-radius: 3px;
+            color: black;
+            cursor: pointer;
+        }
+        .account-btn:hover {
+            background-color: #7FFF00;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
+        <div id="account-status" class="account-status">
+            Not logged in
+            <button id="login-btn" class="account-btn">Login</button>
+        </div>
         <div class="button-container">
             <button id="gamble-btn" class="game-btn">GAMBLE</button>
             <button id="upgrade" class="game-btn">UPGRADE</button>
@@ -286,6 +322,21 @@
                         <p>Cost: 500 coins</p>
                         <button class="game-btn buy-hat" data-hat="crown" data-cost="500" data-multiplier="5">BUY</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="login-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Login / Register</h2>
+                    <button class="close-btn" id="close-login">&times;</button>
+                </div>
+                <div>
+                    <input type="text" id="username" placeholder="Username" required>
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button class="game-btn" id="do-login">Login</button>
+                    <button class="game-btn" id="do-register">Register</button>
                 </div>
             </div>
         </div>

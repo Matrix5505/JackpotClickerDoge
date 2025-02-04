@@ -388,3 +388,171 @@ resetBtn.addEventListener('click', () => {
         alert('Game reset! All progress has been cleared.');
     }
 });
+
+// Account system
+let currentUser = null;
+
+function hashPassword(password) {
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+        const char = password.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return hash.toString();
+}
+
+function saveUserData(username, password) {
+    const hashedPassword = hashPassword(password);
+    const userData = {
+        username: username,
+        password: hashedPassword,
+        gameState: gameState
+    };
+    setCookie(`user_${username}`, JSON.stringify(userData), 365);
+}
+
+function getUserData(username) {
+    const userData = getCookie(`user_${username}`);
+    return userData ? JSON.parse(userData) : null;
+}
+
+function loginUser(username, password) {
+    const userData = getUserData(username);
+    if (!userData) {
+        return false;
+    }
+    
+    if (userData.password === hashPassword(password)) {
+        currentUser = username;
+        if (userData.gameState) {
+            gameState = userData.gameState;
+            coins = gameState.coins;
+            coinCounter.textContent = coins;
+            updateHatDisplay();
+            updateShopDisplay();
+        }
+        return true;
+    }
+    return false;
+}
+
+// Update the existing saveGame function
+const originalSaveGame = saveGame;
+saveGame = function(state) {
+    if (currentUser) {
+        const userData = getUserData(currentUser);
+        userData.gameState = state;
+        setCookie(`user_${currentUser}`, JSON.stringify(userData), 365);
+    } else {
+        originalSaveGame(state);
+    }
+};
+
+// Update the existing loadGame function
+const originalLoadGame = loadGame;
+loadGame = function() {
+    if (currentUser) {
+        const userData = getUserData(currentUser);
+        return userData.gameState || {
+            coins: 0,
+            ownedHats: [],
+            clickMultiplier: 1,
+            equippedHat: null
+        };
+    }
+    return originalLoadGame();
+};
+
+// Account UI elements
+const loginModal = document.getElementById('login-modal');
+const loginBtn = document.getElementById('login-btn');
+const closeLogin = document.getElementById('close-login');
+const doLoginBtn = document.getElementById('do-login');
+const doRegisterBtn = document.getElementById('do-register');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const accountStatus = document.getElementById('account-status');
+
+loginBtn.addEventListener('click', () => {
+    loginModal.style.display = 'block';
+});
+
+closeLogin.addEventListener('click', () => {
+    loginModal.style.display = 'none';
+});
+
+doLoginBtn.addEventListener('click', () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    
+    if (username && password) {
+        if (loginUser(username, password)) {
+            accountStatus.innerHTML = `Logged in as ${username} <button id="logout-btn" class="account-btn">Logout</button>`;
+            loginModal.style.display = 'none';
+            
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                currentUser = null;
+                accountStatus.innerHTML = 'Not logged in <button id="login-btn" class="account-btn">Login</button>';
+                document.getElementById('login-btn').addEventListener('click', () => {
+                    loginModal.style.display = 'block';
+                });
+                // Reset game state to anonymous state
+                gameState = loadGame();
+                coins = gameState.coins;
+                coinCounter.textContent = coins;
+                updateHatDisplay();
+                updateShopDisplay();
+            });
+        } else {
+            alert('Invalid username or password!');
+        }
+    }
+});
+
+doRegisterBtn.addEventListener('click', () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    
+    if (username && password) {
+        if (getUserData(username)) {
+            alert('Username already exists!');
+            return;
+        }
+        
+        saveUserData(username, password);
+        loginUser(username, password);
+        accountStatus.innerHTML = `Logged in as ${username} <button id="logout-btn" class="account-btn">Logout</button>`;
+        loginModal.style.display = 'none';
+        
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            currentUser = null;
+            accountStatus.innerHTML = 'Not logged in <button id="login-btn" class="account-btn">Login</button>';
+            document.getElementById('login-btn').addEventListener('click', () => {
+                loginModal.style.display = 'block';
+            });
+            // Reset game state to anonymous state
+            gameState = loadGame();
+            coins = gameState.coins;
+            coinCounter.textContent = coins;
+            updateHatDisplay();
+            updateShopDisplay();
+        });
+    }
+});
+
+// When window loads, check for existing cookie-based game and convert it
+window.addEventListener('load', () => {
+    const anonymousGame = getCookie('dogeGame');
+    if (anonymousGame && !currentUser) {
+        try {
+            gameState = JSON.parse(anonymousGame);
+            coins = gameState.coins;
+            coinCounter.textContent = coins;
+            updateHatDisplay();
+            updateShopDisplay();
+        } catch (e) {
+            console.error('Error loading anonymous game:', e);
+        }
+    }
+});
